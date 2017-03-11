@@ -13,6 +13,9 @@ con:select("players")
 con:where({name = 'test'})
 local query = con:get()
 
+-- new query (without querybuilder)
+con:query("SELECT * FROM players WHERE name='%s'", 'test')
+
 -- get data
 if not query == false then
 	for key, value in pairs(query) do
