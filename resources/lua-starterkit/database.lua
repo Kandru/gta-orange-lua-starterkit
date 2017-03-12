@@ -41,7 +41,7 @@ function database.init(conn)
 		else print('database: connection closed') end
 	end
 
-	function obj:query(query, ...)
+	function obj:doQuery(query, ...)
 		if self.__conn then
 			local _r = self.__conn:execute(string.format(query, database.escape(self.__conn, ...)))
 
@@ -69,6 +69,23 @@ function database.init(conn)
 		end
 	end
 	
+	function obj:query(query, ...)
+		local next = next
+		local type = type
+		local tmp = self:doQuery(query, ...)
+		if (type(tmp) ~= 'number' and next(tmp) == nil) then
+			return false
+		elseif type(tmp) == 'number' then
+			if tmp == 1 then
+				return true
+			else
+				return false
+			end
+		else
+			return tmp
+		end
+	end
+	
 	function obj:select(tablename, columns)
 		if not columns then
 			self.bquery = 'SELECT * FROM '..database.escape(self.__conn,tablename)
@@ -80,6 +97,44 @@ function database.init(conn)
 			-- delete last comma
 			self.bquery = self.bquery:sub(1, -2)
 		end
+	end
+	
+	function obj:update(tablename, columns, where)
+		local count_where = 0
+		self.bquery = 'UPDATE '..database.escape(self.__conn,tablename)..' SET '
+		for key, value in pairs(columns) do
+			self.bquery = self.bquery..key..'="'..database.escape(self.__conn,value)..'",'
+		end
+		-- delete last comma
+		self.bquery = self.bquery:sub(1, -2)
+		if where then
+			self.bquery = self.bquery..' WHERE '
+			for key, value in pairs(where) do
+				if count_where > 0 then
+					self.bquery = self.bquery..' and '
+				end
+				self.bquery = self.bquery..key..'="'..database.escape(self.__conn,value)..'"'
+			end
+		end
+		return self:query(self.bquery)
+	end
+	
+	function obj:insert(tablename, columns, entries)
+		self.bquery = 'INSERT INTO '..database.escape(self.__conn,tablename)..' ('
+		for key, value in ipairs(columns) do
+			self.bquery = self.bquery..value..','
+		end
+		-- delete last comma
+		self.bquery = self.bquery:sub(1, -2)..')VALUES'
+		for key, value in ipairs(entries) do
+			self.bquery = self.bquery..'('
+			for key2, value2 in ipairs(value) do
+				self.bquery = self.bquery..'"'..value2..'",'
+			end
+			self.bquery = self.bquery:sub(1, -2)
+			self.bquery = self.bquery..')'
+		end
+		return self:query(self.bquery)
 	end
 	
 	function obj:and_where(where)
@@ -109,7 +164,6 @@ function database.init(conn)
 	end
 	
 	function obj:get(limit, offset)
-		print(self.bquery)
 		if not limit then
 			return self:query(self.bquery)
 		else
