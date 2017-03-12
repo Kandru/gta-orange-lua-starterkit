@@ -1,4 +1,4 @@
-local pl = Native.PlayerPedId()
+local pl = Native.PlayerId()
 
 Thread:new(function()
     while true do 
