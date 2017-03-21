@@ -32,7 +32,6 @@ Server:On('lsk_changeWeather', function(weather)
 	else
 		weather = "Clear"
 	end
-    print('Change Weather to:'..weather)
 	Native.SetWeatherTypeNowPersist(weather)
 	Native.SetWeatherTypeNow(weather)
 	Native.SetOverrideWeather(weather)
